@@ -205,16 +205,11 @@ export default function LoginPage() {
             href="/"
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            <ArrowRight className="h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" />
             العودة للرئيسية
           </Link>
         </div>
       </div>
     </div>
   );
-}
-
-// Fix for RTL arrow direction
-function ArrowRight({ className }: { className?: string }) {
-  return <ArrowLeft className={className} />;
 }
