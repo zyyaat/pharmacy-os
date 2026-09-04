@@ -1,0 +1,12 @@
+
+> admin-dashboard@0.1.0 dev
+> next dev -p 3001
+
+▲ Next.js 16.3.4 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://21.0.22.147:3001
+✓ Ready in 295ms
+✓ Running next.config.js took 21ms
+
+ GET /login 200 in 1216ms (next.js: 987ms, application-code: 229ms)
+ HEAD /login 200 in 57ms (next.js: 9ms, application-code: 48ms)
