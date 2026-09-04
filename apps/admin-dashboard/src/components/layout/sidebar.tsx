@@ -73,12 +73,26 @@ const bottomItems: SidebarItem[] = [
 
 interface SidebarProps {
   className?: string;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
-export function Sidebar({ className }: SidebarProps) {
+export function Sidebar({ className, mobileOpen: controlledMobileOpen, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [internalMobileOpen, setInternalMobileOpen] = useState(false);
+  
+  // Use controlled or uncontrolled mode
+  const mobileOpen = controlledMobileOpen !== undefined ? controlledMobileOpen : internalMobileOpen;
+  const handleMobileClose = onMobileClose || (() => setInternalMobileOpen(false));
+  const handleMobileOpen = () => {
+    if (onMobileClose) {
+      // Controlled mode - parent should handle opening
+      // We'll expose this via a ref or just let parent handle it
+    } else {
+      setInternalMobileOpen(true);
+    }
+  };
 
   const SidebarContent = (
     <div
@@ -107,7 +121,7 @@ export function Sidebar({ className }: SidebarProps) {
         {/* Mobile Close Button */}
         <button
           className="lg:hidden p-1.5 rounded-lg hover:bg-accent"
-          onClick={() => setMobileOpen(false)}
+          onClick={handleMobileClose}
         >
           <X className="h-5 w-5" />
         </button>
@@ -136,7 +150,7 @@ export function Sidebar({ className }: SidebarProps) {
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setMobileOpen(false)}
+                onClick={handleMobileClose}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 group relative",
                   isActive
@@ -185,7 +199,7 @@ export function Sidebar({ className }: SidebarProps) {
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setMobileOpen(false)}
+                onClick={handleMobileClose}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 group",
                   isActive
@@ -242,12 +256,15 @@ export function Sidebar({ className }: SidebarProps) {
       {mobileOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setMobileOpen(false)}
+          onClick={handleMobileClose}
         />
       )}
 
       {/* Mobile Sidebar */}
-      <aside className="fixed right-0 top-0 bottom-0 z-50 lg:hidden">
+      <aside className={cn(
+        "fixed right-0 top-0 bottom-0 z-50 lg:hidden transition-transform duration-300",
+        mobileOpen ? "translate-x-0" : "translate-x-full"
+      )}>
         {SidebarContent}
       </aside>
 

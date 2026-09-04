@@ -15,7 +15,10 @@ export default function DashboardLayout({
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar */}
-      <Sidebar className={sidebarOpen ? "translate-x-0" : ""} />
+      <Sidebar 
+        mobileOpen={sidebarOpen} 
+        onMobileClose={() => setSidebarOpen(false)} 
+      />
       
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
