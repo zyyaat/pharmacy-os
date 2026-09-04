@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, ReactNode } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
