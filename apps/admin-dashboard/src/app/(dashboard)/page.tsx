@@ -337,7 +337,5 @@ export default function DashboardPage() {
   );
 }
 
-// Fix for RTL arrow
-function ArrowUpRight({ className, ...props }: { className?: string }) {
-  return require("lucide-react").ArrowLeft({ className, ...props });
-}
+// RTL arrow fix - using CSS transform for proper RTL support
+// ArrowUpRight is imported from lucide-react and will be flipped via CSS

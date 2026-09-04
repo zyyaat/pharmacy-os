@@ -355,10 +355,5 @@ export default function UsersPage() {
   );
 }
 
-// Fix RTL arrows
-function ChevronLeft({ className, ...props }: { className?: string }) {
-  return require("lucide-react").ChevronRight({ className, ...props });
-}
-function ChevronRight({ className, ...props }: { className?: string }) {
-  return require("lucide-react").ChevronLeft({ className, ...props });
-}
+// RTL arrows fix - using CSS transform for proper RTL support
+// ChevronLeft/ChevronRight are imported from lucide-react and will be flipped via CSS

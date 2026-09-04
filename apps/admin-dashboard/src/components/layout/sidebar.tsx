@@ -13,7 +13,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Pharmacy,
+  Store,
   LogOut,
   Menu,
   X,
@@ -59,7 +59,7 @@ const sidebarItems: SidebarItem[] = [
   {
     title: "الصيدليات",
     href: "/pharmacies",
-    icon: <Pharmacy className="h-5 w-5" />,
+    icon: <Store className="h-5 w-5" />,
   },
 ];
 
