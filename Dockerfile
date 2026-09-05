@@ -1,5 +1,6 @@
 # Multi-stage build for Pharmacy OS Backend
 # This Dockerfile is at repository root, builds from backend/
+# Optimized for DockHosting/Coolify deployment
 
 # Stage 1: Build the Go binary
 FROM golang:1.21-alpine AS builder
@@ -31,10 +32,8 @@ FROM alpine:latest
 # - ca-certificates for HTTPS/SSL connections
 # - wget for health checks
 # - tzdata for timezone support
-RUN apk --no-cache add ca-certificates wget tzdata
-
-# Create non-root user for security (optional - comment out if causing issues)
-# RUN adduser -D -h /app appuser
+# - bash for startup script
+RUN apk --no-cache add ca-certificates wget tzdata bash
 
 # Set working directory
 WORKDIR /app
@@ -42,25 +41,28 @@ WORKDIR /app
 # Copy the binary from builder stage
 COPY --from=builder /app/backend/server .
 
+# Create startup script that handles dynamic port assignment
+RUN echo '#!/bin/bash\n\
+# Get PORT from environment (DockHosting provides this)\n\
+PORT="${PORT:-8080}"\n\
+\n\
+echo "Starting Pharmacy OS Backend on port ${PORT}"\n\
+echo "Health check available at: http://localhost:${PORT}/api/v1/health"\n\
+\n\
+# Start the server\n\
+exec ./server' > /app/start.sh && chmod +x /app/start.sh
+
 # Make binary executable
 RUN chmod +x ./server
 
-# Change ownership to non-root user (optional - comment out if causing issues)
-# RUN chown -R appuser:appuser /app
-
-# Switch to non-root user (optional - comment out if causing issues)
-# USER appuser
-
-# Expose the port
-# DockHosting passes PORT env var (usually 80), fallback to 8080
+# Expose the port (DockHosting will use its own port mapping)
 EXPOSE 8080
 
 # Health check endpoint
 # Using wget (installed above)
-# Checking both possible paths for compatibility
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/api/v1/health || \
-        wget --no-verbose --tries=1 --spider http://localhost:80/health || exit 1
+# Try the configured port first, then fallback ports
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD sh -c 'PORT="${PORT:-8080}"; wget --no-verbose --tries=1 --spider "http://localhost:${PORT}/api/v1/health" || exit 1'
 
-# Run the binary
-CMD ["./server"]
+# Run using startup script
+CMD ["/app/start.sh"]

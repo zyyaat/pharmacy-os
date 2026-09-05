@@ -1,0 +1,502 @@
+     1→// Package models defines data structures for Pharmacy OS
+     2→// Phase 1 - Revised Architecture: Global Product Master + Unit Conversions + Inventory Batches + Stock Movements
+     3→package models
+     4→
+     5→import (
+     6→        "time"
+     7→)
+     8→
+     9→// ============================================
+    10→// Foundation Models (Accounts, Tenancy)
+    11→// ============================================
+    12→
+    13→// Account represents the top-level tenant account (pays the bill)
+    14→type Account struct {
+    15→        ID                  string     `json:"id"`
+    16→        CompanyName         string     `json:"company_name"`
+    17→        ContactEmail        string     `json:"contact_email"`
+    18→        ContactPhone        *string    `json:"contact_phone,omitempty"`
+    19→        BillingAddress      *string    `json:"billing_address,omitempty"`
+    20→        Status              string     `json:"status"` // active, suspended, cancelled, trial
+    21→        TrialEndsAt         *time.Time `json:"trial_ends_at,omitempty"`
+    22→        SubscriptionPlan    string     `json:"subscription_plan"` // free, professional, enterprise
+    23→        DefaultCurrency     string     `json:"default_currency"`
+    24→        Timezone            string     `json:"timezone"`
+    25→        Locale              string     `json:"locale"`
+    26→        Settings            map[string]interface{} `json:"settings,omitempty"`
+    27→        CreatedAt           time.Time  `json:"created_at"`
+    28→        UpdatedAt           time.Time  `json:"updated_at"`
+    29→}
+    30→
+    31→// Pharmacy represents a pharmacy tenant (belongs to an account)
+    32→type Pharmacy struct {
+    33→        ID                       string     `json:"id"`
+    34→        AccountID                string     `json:"account_id"`
+    35→        Name                     string     `json:"name"`
+    36→        LegalName                *string    `json:"legal_name,omitempty"`
+    37→        LicenseNumber            *string    `json:"license_number,omitempty"`
+    38→        TaxID                    *string    `json:"tax_id,omitempty"`
+    39→        Email                    *string    `json:"email,omitempty"`
+    40→        Phone                    *string    `json:"phone,omitempty"`
+    41→        Website                  *string    `json:"website,omitempty"`
+    42→        AddressLine1             *string    `json:"address_line1,omitempty"`
+    43→        AddressLine2             *string    `json:"address_line2,omitempty"`
+    44→        City                     *string    `json:"city,omitempty"`
+    45→        StateProvince            *string    `json:"state_province,omitempty"`
+    46→        PostalCode               *string    `json:"postal_code,omitempty"`
+    47→        Country                  *string    `json:"country,omitempty"`
+    48→        IsMainBranch             bool       `json:"is_main_branch"`
+    49→        DefaultBranchID          *string    `json:"default_branch_id,omitempty"`
+    50→        Currency                 *string    `json:"currency,omitempty"`
+    51→        AutoExpiryAlertDays      int        `json:"auto_expiry_alert_days"`
+    52→        LowStockThreshold        int        `json:"low_stock_threshold"`
+    53→        EnableBatchTracking      bool       `json:"enable_batch_tracking"`
+    54→        IsActive                 bool       `json:"is_active"`
+    55→        CreatedAt                time.Time  `json:"created_at"`
+    56→        UpdatedAt                time.Time  `json:"updated_at"`
+    57→}
+    58→
+    59→// Branch represents a sub-branch of a pharmacy
+    60→type Branch struct {
+    61→        ID           string     `json:"id"`
+    62→        PharmacyID   string     `json:"pharmacy_id"`
+    63→        Name         string     `json:"name"`
+    64→        Code         *string    `json:"code,omitempty"`
+    65→        Phone        *string    `json:"phone,omitempty"`
+    66→        Email        *string    `json:"email,omitempty"`
+    67→        AddressLine1 *string    `json:"address_line1,omitempty"`
+    68→        AddressLine2 *string    `json:"address_line2,omitempty"`
+    69→        City         *string    `json:"city,omitempty"`
+    70→        StateProvince *string   `json:"state_province,omitempty"`
+    71→        PostalCode   *string    `json:"postal_code,omitempty"`
+    72→        Country      *string    `json:"country,omitempty"`
+    73→        ManagerEmployeeID *string `json:"manager_employee_id,omitempty"`
+    74→        IsActive     bool       `json:"is_active"`
+    75→        CreatedAt    time.Time  `json:"created_at"`
+    76→        UpdatedAt    time.Time  `json:"updated_at"`
+    77→}
+    78→
+    79→// Employee represents a pharmacy employee (auth via Supabase Auth)
+    80→type Employee struct {
+    81→        ID                   string     `json:"id"`
+    82→        AccountID            string     `json:"account_id"`
+    83→        PharmacyID           string     `json:"pharmacy_id"`
+    84→        BranchID             *string    `json:"branch_id,omitempty"`
+    85→        AuthUserID           *string    `json:"auth_user_id,omitempty"` // Supabase auth.users ID
+    86→        Email                string     `json:"email"`
+    87→        FirstName            string     `json:"first_name"`
+    88→        LastName             string     `json:"last_name"`
+    89→        DisplayName          *string    `json:"display_name,omitempty"`
+    90→        Phone                *string    `json:"phone,omitempty"`
+    91→        Address              *string    `json:"address,omitempty"`
+    92→        EmergencyContactName *string    `json:"emergency_contact_name,omitempty"`
+    93→        EmergencyContactPhone *string   `json:"emergency_contact_phone,omitempty"`
+    94→        EmployeeIDInternal   *string    `json:"employee_id_internal,omitempty"`
+    95→        JobTitle             *string    `json:"job_title,omitempty"`
+    96→        Department           *string    `json:"department,omitempty"`
+    97→        HireDate             *time.Time `json:"hire_date,omitempty"`
+    98→        TerminationDate      *time.Time `json:"termination_date,omitempty"`
+    99→        BaseSalary           *float64   `json:"base_salary,omitempty"`
+   100→        Status               string     `json:"status"` // active, inactive, on_leave, terminated
+   101→        PermissionVersion    int        `json:"permission_version"`
+   102→        AvatarURL            *string    `json:"avatar_url,omitempty"`
+   103→        Preferences          map[string]interface{} `json:"preferences,omitempty"`
+   104→        CreatedAt            time.Time  `json:"created_at"`
+   105→        UpdatedAt            time.Time  `json:"updated_at"`
+   106→}
+   107→
+   108→// ============================================
+   109→// Product Models (Global Product Master)
+   110→// ============================================
+   111→
+   112→// DosageForm enum values
+   113→const (
+   114→        DosageFormTablet    = "tablet"
+   115→        DosageFormCapsule   = "capsule"
+   116→        DosageFormSyrup     = "syrup"
+   117→        DosageFormDrop      = "drop"
+   118→        DosageFormInjection = "injection"
+   119→        DosageFormOintment  = "ointment"
+   120→        DosageFormCream     = "cream"
+   121→        DosageFormGel       = "gel"
+   122→        DosageFormPowder    = "powder"
+   123→        DosageFormSolution  = "solution"
+   124→        DosageFormSuspension = "suspension"
+   125→        DosageFormInhaler   = "inhaler"
+   126→        DosageFormPatch     = "patch"
+   127→        DosageFormSuppository = "suppository"
+   128→        DosageFormEyeDrops  = "eye_drops"
+   129→        DosageFormEarDrops  = "ear_drops"
+   130→        DosageFormNasalSpray = "nasal_spray"
+   131→        DosageFormOther     = "other"
+   132→)
+   133→
+   134→// UnitType enum values for inventory units
+   135→const (
+   136→        UnitBox      = "box"
+   137→        UnitStrip    = "strip"
+   138→        UnitBlister  = "blister"
+   139→        UnitTablet   = "tablet"
+   140→        UnitCapsule  = "capsule"
+   141→        UnitBottle   = "bottle"
+   142→        UnitVial     = "vial"
+   143→        UnitAmpoule  = "ampoule"
+   144→        UnitTube     = "tube"
+   145→        UnitJar      = "jar"
+   146→        UnitPacket   = "packet"
+   147→        UnitPiece    = "piece"
+   148→        UnitSet      = "set"
+   149→        UnitKit      = "kit"
+   150→        UnitLiter    = "liter"
+   151→        UnitMilliliter = "milliliter"
+   152→        UnitGram     = "gram"
+   153→        UnitKilogram = "kilogram"
+   154→        UnitMeter    = "meter"
+   155→        UnitOther    = "other"
+   156→)
+   157→
+   158→// GlobalProduct represents a product in the global catalog (shared across all pharmacies)
+   159→type GlobalProduct struct {
+   160→        ID                   string     `json:"id"`
+   161→        Name                 string     `json:"name"`
+   162→        GenericName          *string    `json:"generic_name,omitempty"`
+   163→        BrandName            *string    `json:"brand_name,omitempty"`
+   164→        DosageForm           string     `json:"dosage_form"`
+   165→        Strength             *string    `json:"strength,omitempty"`
+   166→        ProductCategory      string     `json:"product_category"`
+   167→        RequiresPrescription string     `json:"requires_prescription"` // yes, no, otc_only
+   168→        ControlledSubstance  bool       `json:"controlled_substance"`
+   169→        ScheduleCategory     *string    `json:"schedule_category,omitempty"`
+   170→        Barcode              *string    `json:"barcode,omitempty"`
+   171→        BarcodeType          *string    `json:"barcode_type,omitempty"`
+   172→        NationalCode         *string    `json:"national_code,omitempty"`
+   173→        ManufacturerSKU      *string    `json:"manufacturer_sku,omitempty"`
+   174→        ManufacturerName     *string    `json:"manufacturer_name,omitempty"`
+   175→        ManufacturerCountry  *string    `json:"manufacturer_country,omitempty"`
+   176→        ActiveIngredient      *string    `json:"active_ingredient,omitempty"`
+   177→        TherapeuticClass     *string    `json:"therapeutic_class,omitempty"`
+   178→        ATCCode              *string    `json:"atc_code,omitempty"`
+   179→        DefaultUnit          string     `json:"default_unit"`
+   180→        Description          *string    `json:"description,omitempty"`
+   181→        StorageInstructions  *string    `json:"storage_instructions,omitempty"`
+   182→        IsActive             bool       `json:"is_active"`
+   183→        CreatedBy            *string    `json:"created_by,omitempty"`
+   184→        CreatedAt            time.Time  `json:"created_at"`
+   185→        UpdatedAt            time.Time  `json:"updated_at"`
+   186→}
+   187→
+   188→// UnitConversion represents unit conversion rules for a product
+   189→// Example: 1 box = 5 strips, 1 strip = 10 tablets → 1 box = 50 tablets
+   190→type UnitConversion struct {
+   191→        ID               string    `json:"id"`
+   192→        GlobalProductID  string    `json:"global_product_id"`
+   193→        FromUnit         string    `json:"from_unit"`
+   194→        ToUnit           string    `json:"to_unit"`
+   195→        ConversionFactor float64   `json:"conversion_factor"` // e.g., 5.0 means 1 from_unit = 5 to_units
+   196→        IsStandard       bool      `json:"is_standard"`
+   197→        Description      *string   `json:"description,omitempty"`
+   198→        CreatedAt        time.Time `json:"created_at"`
+   199→}
+   200→
+   201→// PharmacyProduct represents a pharmacy's specific product data (pricing, stock levels, etc.)
+   202→type PharmacyProduct struct {
+   203→        ID                   string     `json:"id"`
+   204→        PharmacyID           string     `json:"pharmacy_id"`
+   205→        GlobalProductID      string     `json:"global_product_id"`
+   206→        CostPrice            float64    `json:"cost_price"`
+   207→        SellingPrice         float64    `json:"selling_price"`
+   208→        MarginPercentage     *float64   `json:"margin_percentage,omitempty"`
+   209→        TaxRate              float64    `json:"tax_rate"`
+   210→        TaxCategory          *string    `json:"tax_category,omitempty"`
+   211→        MinStockLevel        float64    `json:"min_stock_level"`
+   212→        MaxStockLevel        *float64   `json:"max_stock_level,omitempty"`
+   213→        ReorderQuantity      *float64   `json:"reorder_quantity,omitempty"`
+   214→        PreferredSupplierID  *string    `json:"preferred_supplier_id,omitempty"`
+   215→        InternalSKU          *string    `json:"internal_sku,omitempty"`
+   216→        ShelfLocation        *string    `json:"shelf_location,omitempty"`
+   217→        BinLocation          *string    `json:"bin_location,omitempty"`
+   218→        IsActive             bool       `json:"is_active"`
+   219→        IsDiscontinued       bool       `json:"is_discontinued"`
+   220→        FirstAddedAt         time.Time  `json:"first_added_at"`
+   221→        LastReceivedAt       *time.Time `json:"last_received_at,omitempty"`
+   222→        LastSoldAt           *time.Time `json:"last_sold_at,omitempty"`
+   223→        CreatedAt            time.Time  `json:"created_at"`
+   224→        UpdatedAt            time.Time  `json:"updated_at"`
+   225→        
+   226→        // Joined fields (not in DB, populated via queries)
+   227→        GlobalProduct *GlobalProduct `json:"global_product,omitempty"`
+   228→}
+   229→
+   230→// ============================================
+   231→// Inventory Models (Batches & Movements)
+   232→// ============================================
+   233→
+   234→// MovementType enum values
+   235→const (
+   236→        MovementPurchase           = "purchase"
+   237→        MovementSale               = "sale"
+   238→        MovementReturnToSupplier   = "return_to_supplier"
+   239→        MovementReturnFromCustomer = "return_from_customer"
+   240→        MovementAdjustment         = "adjustment"
+   241→        MovementTransferIn         = "transfer_in"
+   242→        MovementTransferOut        = "transfer_out"
+   243→        MovementExpiryWriteoff     = "expiry_writeoff"
+   244→        MovementDamageWriteoff     = "damage_writeoff"
+   245→        MovementTheftLoss          = "theft_loss"
+   246→        MovementProductionInput    = "production_input"
+   247→        MovementProductionOutput   = "production_output"
+   248→)
+   249→
+   250→// InventoryBatch represents a physical batch of products at a branch
+   251→type InventoryBatch struct {
+   252→        ID                string     `json:"id"`
+   253→        PharmacyProductID string     `json:"pharmacy_product_id"`
+   254→        BranchID          string     `json:"branch_id"`
+   255→        BatchNumber       string     `json:"batch_number"`
+   256→        Barcode           *string    `json:"barcode,omitempty"`
+   257→        Quantity          float64    `json:"quantity"`
+   258→        Unit              string     `json:"unit"`
+   259→        CostPerUnit       float64    `json:"cost_per_unit"`
+   260→        TotalCost         float64    `json:"total_cost"`
+   261→        ManufactureDate   *time.Time `json:"manufacture_date,omitempty"`
+   262→        ExpiryDate        *time.Time `json:"expiry_date,omitempty"`
+   263→        DaysUntilExpiry   *int       `json:"days_until_expiry,omitempty"`
+   264→        SupplierName      *string    `json:"supplier_name,omitempty"`
+   265→        SupplierReference *string    `json:"supplier_reference,omitempty"`
+   266→        Location          *string    `json:"location,omitempty"`
+   267→        IsReserved        bool       `json:"is_reserved"`
+   268→        IsQuarantined     bool       `json:"is_quarantined"`
+   269→        QuarantineReason  *string    `json:"quarantine_reason,omitempty"`
+   270→        ReceivedDate      time.Time  `json:"received_date"`
+   271→        ReceivedBy        *string    `json:"received_by,omitempty"`
+   272→        ReferenceType     *string    `json:"reference_type,omitempty"`
+   273→        ReferenceID       *string    `json:"reference_id,omitempty"`
+   274→        CreatedAt         time.Time  `json:"created_at"`
+   275→        UpdatedAt         time.Time  `json:"updated_at"`
+   276→        
+   277→        // Joined fields
+   278→        PharmacyProduct *PharmacyProduct `json:"pharmacy_product,omitempty"`
+   279→        GlobalProduct  *GlobalProduct   `json:"global_product,omitempty"`
+   280→        Branch         *Branch          `json:"branch,omitempty"`
+   281→}
+   282→
+   283→// StockMovement represents every inventory change (SOURCE OF TRUTH for quantities)
+   284→type StockMovement struct {
+   285→        ID              string     `json:"id"`
+   286→        BatchID         string     `json:"batch_id"`
+   287→        MovementType    string     `json:"movement_type"`
+   288→        Quantity        float64    `json:"quantity"` // Positive = IN, Negative = OUT
+   289→        Unit            string     `json:"unit"`
+   290→        ReferenceType   *string    `json:"reference_type,omitempty"`
+   291→        ReferenceID     *string    `json:"reference_id,omitempty"`
+   292→        QuantityBefore  *float64   `json:"quantity_before,omitempty"`
+   293→        QuantityAfter   *float64   `json:"quantity_after,omitempty"`
+   294→        UnitCost        *float64   `json:"unit_cost,omitempty"`
+   295→        TotalCost       *float64   `json:"total_cost,omitempty"`
+   296→        CreatedBy       string     `json:"created_by"`
+   297→        ApprovedBy      *string    `json:"approved_by,omitempty"`
+   298→        Reason          *string    `json:"reason,omitempty"`
+   299→        Notes           *string    `json:"notes,omitempty"`
+   300→        IPAddress       *string    `json:"ip_address,omitempty"`
+   301→        UserAgent       *string    `json:"user_agent,omitempty"`
+   302→        CreatedAt       time.Time  `json:"created_at"`
+   303→        
+   304→        // Joined fields
+   305→        Batch           *InventoryBatch `json:"batch,omitempty"`
+   306→        CreatedByEmployee *Employee      `json:"created_by_employee,omitempty"`
+   307→}
+   308→
+   309→// CurrentInventoryView represents the pre-calculated current inventory view
+   310→type CurrentInventoryView struct {
+   311→        BatchID           string     `json:"batch_id"`
+   312→        PharmacyProductID string     `json:"pharmacy_product_id"`
+   313→        PharmacyID        string     `json:"pharmacy_id"`
+   314→        BranchID          string     `json:"branch_id"`
+   315→        GlobalProductID   string     `json:"global_product_id"`
+   316→        ProductName       string     `json:"product_name"`
+   317→        GenericName       *string    `json:"generic_name,omitempty"`
+   318→        BrandName         *string    `json:"brand_name,omitempty"`
+   319→        Barcode           *string    `json:"barcode,omitempty"`
+   320→        DosageForm        string     `json:"dosage_form"`
+   321→        Strength          *string    `json:"strength,omitempty"`
+   322→        BatchNumber       string     `json:"batch_number"`
+   323→        Unit              string     `json:"unit"`
+   324→        Quantity          float64    `json:"quantity"`
+   325→        CostPerUnit       float64    `json:"cost_per_unit"`
+   326→        TotalCost         float64    `json:"total_cost"`
+   327→        ExpiryDate        *time.Time `json:"expiry_date,omitempty"`
+   328→        DaysUntilExpiry   *int       `json:"days_until_expiry,omitempty"`
+   329→        SellingPrice      float64    `json:"selling_price"`
+   330→        MinStockLevel     float64    `json:"min_stock_level"`
+   331→        BranchName        *string    `json:"branch_name,omitempty"`
+   332→        Status            string     `json:"status"` // low_stock, expiring_soon, quarantined, normal
+   333→}
+   334→
+   335→// ============================================
+   336→// Attendance Model (Updated)
+   337→// ============================================
+   338→
+   339→// AttendanceRecord represents an employee attendance entry
+   340→type AttendanceRecord struct {
+   341→        ID              string     `json:"id"`
+   342→        EmployeeID      string     `json:"employee_id"`
+   343→        BranchID        string     `json:"branch_id"`
+   344→        PharmacyID      string     `json:"pharmacy_id"`
+   345→        ClockIn         time.Time  `json:"clock_in"`
+   346→        ClockOut        *time.Time `json:"clock_out,omitempty"`
+   347→        TotalMinutes    *int       `json:"total_minutes,omitempty"`
+   348→        Status          string     `json:"status"` // active, completed, adjusted, missed_clockout
+   349→        Notes           *string    `json:"notes,omitempty"`
+   350→        AdjustmentReason *string   `json:"adjustment_reason,omitempty"`
+   351→        AdjustedBy      *string    `json:"adjusted_by,omitempty"`
+   352→        AdjustedAt      *time.Time `json:"adjusted_at,omitempty"`
+   353→        ClockInIP       *string    `json:"clock_in_ip,omitempty"`
+   354→        ClockOutIP      *string    `json:"clock_out_ip,omitempty"`
+   355→        DeviceInfo      map[string]interface{} `json:"device_info,omitempty"`
+   356→        CreatedAt       time.Time  `json:"created_at"`
+   357→        UpdatedAt       time.Time  `json:"updated_at"`
+   358→        
+   359→        // Joined fields
+   360→        Employee *Employee `json:"employee,omitempty"`
+   361→        Branch   *Branch   `json:"branch,omitempty"`
+   362→}
+   363→
+   364→// ============================================
+   365→// Audit Log Model (Updated)
+   366→// ============================================
+   367→
+   368→// AuditLog represents an audit trail entry
+   369→type AuditLog struct {
+   370→        ID               string     `json:"id"`
+   371→        PharmacyID       string     `json:"pharmacy_id"`
+   372→        AccountID        string     `json:"account_id"`
+   373→        ActorID          *string    `json:"actor_id,omitempty"`
+   374→        ActorEmail       *string    `json:"actor_email,omitempty"`
+   375→        ActorDisplayName *string    `json:"actor_display_name,omitempty"`
+   376→        ActorRole        *string    `json:"actor_role,omitempty"`
+   377→        ActorAuthUserID  *string    `json:"actor_auth_user_id,omitempty"`
+   378→        Action           string     `json:"action"`
+   379→        ActionCategory   *string    `json:"action_category,omitempty"`
+   380→        EntityType       string     `json:"entity_type"`
+   381→        EntityID         *string    `json:"entity_id,omitempty"`
+   382→        OldValues        map[string]interface{} `json:"old_values,omitempty"`
+   383→        NewValues        map[string]interface{} `json:"new_values,omitempty"`
+   384→        ChangesSummary   *string    `json:"changes_summary,omitempty"`
+   385→        FieldsChanged    []string   `json:"fields_changed,omitempty"`
+   386→        RequestID        *string    `json:"request_id,omitempty"`
+   387→        IPAddress        *string    `json:"ip_address,omitempty"`
+   388→        UserAgent        *string    `json:"user_agent,omitempty"`
+   389→        ClientInfo       map[string]interface{} `json:"client_info,omitempty"`
+   390→        Success          bool       `json:"success"`
+   391→        ErrorMessage     *string    `json:"error_message,omitempty"`
+   392→        DurationMs       *int       `json:"duration_ms,omitempty"`
+   393→        Severity         string     `json:"severity"` // info, warning, critical
+   394→        Tags             []string   `json:"tags,omitempty"`
+   395→        Notes            *string    `json:"notes,omitempty"`
+   396→        CreatedAt        time.Time  `json:"created_at"`
+   397→}
+   398→
+   399→// ============================================
+   400→// Request/Response DTOs (Data Transfer Objects)
+   401→// ============================================
+   402→
+   403→// CreateGlobalProductRequest represents request body for creating a global product
+   404→type CreateGlobalProductRequest struct {
+   405→        Name                 string   `json:"name" binding:"required"`
+   406→        GenericName          *string  `json:"generic_name,omitempty"`
+   407→        BrandName            *string  `json:"brand_name,omitempty"`
+   408→        DosageForm           string   `json:"dosage_form" binding:"required"`
+   409→        Strength             *string  `json:"strength,omitempty"`
+   410→        ProductCategory      string   `json:"product_category"`
+   411→        RequiresPrescription string   `json:"requires_prescription"`
+   412→        ControlledSubstance  bool     `json:"controlled_substance"`
+   413→        ScheduleCategory     *string  `json:"schedule_category,omitempty"`
+   414→        Barcode              *string  `json:"barcode,omitempty"`
+   415→        BarcodeType          *string  `json:"barcode_type,omitempty"`
+   416→        NationalCode         *string  `json:"national_code,omitempty"`
+   417→        ManufacturerSKU      *string  `json:"manufacturer_sku,omitempty"`
+   418→        ManufacturerName     *string  `json:"manufacturer_name,omitempty"`
+   419→        ManufacturerCountry  *string  `json:"manufacturer_country,omitempty"`
+   420→        ActiveIngredient      *string  `json:"active_ingredient,omitempty"`
+   421→        TherapeuticClass     *string  `json:"therapeutic_class,omitempty"`
+   422→        ATCCode              *string  `json:"atc_code,omitempty"`
+   423→        DefaultUnit          string   `json:"default_unit"`
+   424→        Description          *string  `json:"description,omitempty"`
+   425→        StorageInstructions  *string  `json:"storage_instructions,omitempty"`
+   426→}
+   427→
+   428→// AddPharmacyProductRequest represents request body for adding product to pharmacy
+   429→type AddPharmacyProductRequest struct {
+   430→        GlobalProductID     string   `json:"global_product_id" binding:"required"`
+   431→        CostPrice           float64  `json:"cost_price"`
+   432→        SellingPrice        float64  `json:"selling_price" binding:"required"`
+   433→        MarginPercentage     *float64 `json:"margin_percentage,omitempty"`
+   434→        TaxRate              float64  `json:"tax_rate"`
+   435→        TaxCategory          *string  `json:"tax_category,omitempty"`
+   436→        MinStockLevel        float64  `json:"min_stock_level"`
+   437→        MaxStockLevel        *float64 `json:"max_stock_level,omitempty"`
+   438→        ReorderQuantity      *float64 `json:"reorder_quantity,omitempty"`
+   439→        InternalSKU          *string  `json:"internal_sku,omitempty"`
+   440→        ShelfLocation        *string  `json:"shelf_location,omitempty"`
+   441→        BinLocation          *string  `json:"bin_location,omitempty"`
+   442→}
+   443→
+   444→// CreateInventoryBatchRequest represents request body for creating an inventory batch
+   445→type CreateInventoryBatchRequest struct {
+   446→        PharmacyProductID string  `json:"pharmacy_product_id" binding:"required"`
+   447→        BranchID          string  `json:"branch_id" binding:"required"`
+   448→        BatchNumber       string  `json:"batch_number" binding:"required"`
+   449→        Barcode           *string `json:"barcode,omitempty"`
+   450→        Quantity          float64 `json:"quantity" binding:"required,gt=0"`
+   451→        Unit              string  `json:"unit" binding:"required"`
+   452→        CostPerUnit       float64 `json:"cost_per_unit" binding:"required,gte=0"`
+   453→        ManufactureDate   *string `json:"manufacture_date,omitempty"` // ISO date format
+   454→        ExpiryDate        *string `json:"expiry_date,omitempty"`      // ISO date format
+   455→        SupplierName      *string `json:"supplier_name,omitempty"`
+   456→        SupplierReference *string `json:"supplier_reference,omitempty"`
+   457→        Location          *string `json:"location,omitempty"`
+   458→        ReferenceType     *string `json:"reference_type,omitempty"`
+   459→        ReferenceID       *string `json:"reference_id,omitempty"`
+   460→}
+   461→
+   462→// CreateStockMovementRequest represents request body for creating a stock movement
+   463→type CreateStockMovementRequest struct {
+   464→        BatchID       string  `json:"batch_id" binding:"required"`
+   465→        MovementType  string  `json:"movement_type" binding:"required"`
+   466→        Quantity      float64 `json:"quantity" binding:"required"`
+   467→        Unit          string  `json:"unit" binding:"required"`
+   468→        ReferenceType *string `json:"reference_type,omitempty"`
+   469→        ReferenceID   *string `json:"reference_id,omitempty"`
+   470→        Reason        *string `json:"reason,omitempty"` // Required for adjustments
+   471→        Notes         *string `json:"notes,omitempty"`
+   472→}
+   473→
+   474→// SearchProductsRequest represents query parameters for product search
+   475→type SearchProductsRequest struct {
+   476→        Query       string   `form:"query"`
+   477→        Category    string   `form:"category"`
+   478→        DosageForm  string   `form:"dosage_form"`
+   479→        Manufacturer string  `form:"manufacturer"`
+   480→        RequiresRx  *bool    `form:"requires_prescription"`
+   481→        Page        int      `form:"page" binding:"min=1"`
+   482→        PageSize    int      `form:"page_size" binding:"min=1,max=100"`
+   483→        SortBy      string   `form:"sort_by"` // name, generic_name, brand_name, created_at
+   484→        SortOrder   string   `form:"sort_order"` // asc, desc
+   485→}
+   486→
+   487→// PaginatedResponse represents a paginated API response
+   488→type PaginatedResponse struct {
+   489→        Data       interface{} `json:"data"`
+   490→        Pagination Pagination  `json:"pagination"`
+   491→}
+   492→
+   493→// Pagination contains pagination metadata
+   494→type Pagination struct {
+   495→        Page       int   `json:"page"`
+   496→        PageSize   int   `json:"page_size"`
+   497→        TotalItems int   `json:"total_items"`
+   498→        TotalPages int   `json:"total_pages"`
+   499→        HasNext    bool  `json:"has_next"`
+   500→        HasPrev    bool  `json:"has_prev"`
+   501→}
+   502→
