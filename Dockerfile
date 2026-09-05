@@ -43,14 +43,12 @@ COPY --from=builder /app/backend/server .
 # Make binary executable
 RUN chmod +x ./server
 
-# Expose the port (DockHosting will use its own port mapping)
-EXPOSE 8080
+# Expose common ports (DockHosting may use 80, 8080, or dynamic port)
+EXPOSE 80 8080
 
-# Health check endpoint
-# Using wget (installed above)
-# DockHosting passes PORT env var (usually 80), fallback to 8080
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/api/v1/health || exit 1
+# NOTE: Health check disabled here to avoid port mismatch issues
+# DockHosting/Coolify will handle health checks based on its configuration
+# If you need custom healthcheck, configure it in DockHosting UI settings
 
-# Run the binary directly (simple & reliable!)
+# Run the binary directly
 CMD ["./server"]
