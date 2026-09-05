@@ -4,6 +4,7 @@ package config
 
 import (
         "fmt"
+        "log"
         "os"
         "time"
 )
@@ -33,7 +34,7 @@ type Config struct {
 
 // Load reads configuration from environment variables with sensible defaults
 func Load() *Config {
-        return &Config{
+        cfg := &Config{
                 // Server
                 // Priority: PORT (DockHosting/standard) > BACKEND_PORT (custom) > 8080 (default)
                 Port:         getEnv("PORT", getEnv("BACKEND_PORT", "8080")),
@@ -55,6 +56,24 @@ func Load() *Config {
                 CorsOrigins:    getEnv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001"),
                 MaxRequestSize: getEnvAsInt64("MAX_REQUEST_SIZE", 10*1024*1024), // 10MB default
         }
+        
+        // Log important configuration for debugging
+        log.Printf("[CONFIG] Port: %s, Environment: %s, DatabaseURL: %s", 
+            cfg.Port, cfg.Environment, maskDatabaseURL(cfg.DatabaseURL))
+        
+        return cfg
+}
+
+// maskDatabaseURL masks sensitive parts of the database URL for logging
+func maskDatabaseURL(url string) string {
+    if url == "" {
+        return "(empty)"
+    }
+    // Show only the host part, mask credentials
+    if len(url) > 50 {
+        return url[:50] + "..."
+    }
+        return url
 }
 
 // IsProduction returns true if running in production mode
