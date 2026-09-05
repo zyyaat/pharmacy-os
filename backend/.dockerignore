@@ -1,0 +1,49 @@
+# Version control
+.git
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files (secrets!)
+.env
+.env.local
+.env.*.local
+
+# Test files
+tests/
+*_test.go
+
+# Documentation
+*.md
+docs/
+
+# Docker files (no need in build context)
+Dockerfile*
+docker-compose*
+.docker/
+
+# Nixpacks config (we're using Docker now)
+nixpacks.toml
+.nixpacks/
+
+# Build output
+/server
+/out
+*.exe
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
